@@ -18,3 +18,7 @@
 .grayed-out {
   opacity: 0.5;
 }
+
+.logo h1 {
+  color: white;
+}

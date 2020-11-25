@@ -1,23 +1,32 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Layout, Menu, Button } from 'antd';
+import { UserOutlined, LaptopOutlined, NotificationOutlined } from '@ant-design/icons';
+import { GitLabIntegration } from './Integration/GitLab/GitLabIntegration'
+import { Integration, Repository } from './Integration/Integration'
+import { PullRequestTable } from './PullRequestTable'
+import {
+  RepositorySetupForm,
+  RepositorySetupFormProps
+} from './RepositorySetupForm'
+
 import 'antd/dist/antd.css';
 import './App.css';
 
-import { Layout, Menu, Breadcrumb } from 'antd';
-import { UserOutlined, LaptopOutlined, NotificationOutlined } from '@ant-design/icons';
-
-import { GitLabIntegration } from './Integration/GitLab/GitLabIntegration'
-import { Integration, PullRequest } from './Integration/Integration'
-import { useEffect, useState } from 'react'
-import { PullRequestTable } from './PullRequestTable'
-
-const { SubMenu } = Menu;
-const { Header, Content, Footer, Sider } = Layout;
-
+const { Header, Content, Sider } = Layout;
 
 const integrations: Integration<any>[] = [
   new GitLabIntegration(),
 ];
 
 function App() {
+
+  const repositoriesInitialState = useMemo(
+    () => JSON.parse(localStorage.getItem("repositories") || "[]"),
+    []
+  );
+  const [repositories, setRepositories] = useState<Repository<unknown>[]>(repositoriesInitialState);
+  const [selectedRepositoryIndex, setSelectedRepositoryIndex] = useState<number|undefined>(repositories.length > 0 ? 0 : undefined);
+  const [loading, setLoading] = useState(false);
 
   const routeCatched = integrations.some(
     integration => {
@@ -31,86 +40,112 @@ function App() {
       }
     }
   );
-  const [pullRequests, setPullRequests] = useState<PullRequest[]|undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(
+    () => {
+      if (selectedRepositoryIndex === undefined) {
+        return;
+      }
+
+      setLoading(true);
+
+      const integration: Integration<unknown> = integrations.find(({ id }) => id === repositories[selectedRepositoryIndex].integrationId)!;
+
+      integration.fetchPullRequests(repositories[selectedRepositoryIndex].source).then(fetchedPRs => {
+        fetchedPRs.sort(
+          (a, b) => {
+            const statusComp = a.status - b.status;
+
+            if (statusComp === 0) {
+              return +a.createdAt - +b.createdAt;
+            } else {
+              return statusComp;
+            }
+          }
+        );
+
+        setRepositories((repositories) => repositories.map(
+          (repository, index) => index === selectedRepositoryIndex ?
+            { ...repository, data: fetchedPRs } :
+            repository
+        ));
+        setLoading(false);
+      })
+    },
+    [repositories, selectedRepositoryIndex]
+  );
 
   useEffect(
     () => {
-      if (!routeCatched && pullRequests === undefined) {
-        setLoading(true);
-        integrations[0].fetchPullRequests({
-          repositoryPath: _PROJECT_PATH_,
-          filterLabels: [],
-        }).then(fetchedPRs => {
-          setPullRequests(fetchedPRs.sort(
-            (a, b) => {
-              const statusComp = a.status - b.status;
-
-              if (statusComp === 0) {
-                return +a.createdAt - +b.createdAt;
-              } else {
-                return statusComp;
-              }
-            }
-          ));
-          setLoading(false);
-        })
+      if (!routeCatched && selectedRepositoryIndex !== undefined && repositories[selectedRepositoryIndex].data === undefined && loading === false) {
+        refresh();
       }
     },
-    [routeCatched, pullRequests]
+    [routeCatched, selectedRepositoryIndex, repositories, loading]
   );
 
+  const repositoryMenuItems = useMemo(
+    () =>
+      repositories.map(
+        ({ name }, index) => (
+          <Menu.Item key={index} onClick={() => setSelectedRepositoryIndex(index)}>{name}</Menu.Item>
+        )
+      ),
+    [repositories]
+  );
+
+  const onRepositorySetup = useCallback(
+    () => {
+      setSelectedRepositoryIndex(undefined);
+    },
+    []
+  );
+
+  const onRepositorySave = useCallback<RepositorySetupFormProps['onSave']>(
+    repository => {
+      setRepositories(prevRepositories => [...prevRepositories, repository]);
+      setSelectedRepositoryIndex(repositories.length);
+
+      localStorage.setItem("repositories", JSON.stringify([...repositories, repository].map(({ data, ...config }) => config)));
+    },
+    [repositories]
+  );
 
   return (
     <Layout>
       <Header className="header">
-        <div className="logo" />
-        <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['2']}>
-          <Menu.Item key="1">nav 1</Menu.Item>
-          <Menu.Item key="2">nav 2</Menu.Item>
-          <Menu.Item key="3">nav 3</Menu.Item>
-        </Menu>
+        <div className="logo">
+          <h1>PR assistant</h1>
+        </div>
       </Header>
       <Content style={{ padding: '0 50px' }}>
-        <Breadcrumb style={{ margin: '16px 0' }}>
-          <Breadcrumb.Item>Home</Breadcrumb.Item>
-          <Breadcrumb.Item>List</Breadcrumb.Item>
-          <Breadcrumb.Item>App</Breadcrumb.Item>
-        </Breadcrumb>
         <Layout className="site-layout-background" style={{ padding: '24px 0' }}>
-          <Sider className="site-layout-background" width={200}>
+          <Sider className="site-layout-background" width={250}>
             <Menu
               mode="inline"
-              defaultSelectedKeys={['1']}
-              defaultOpenKeys={['sub1']}
+              defaultSelectedKeys={[selectedRepositoryIndex !== undefined ? String(selectedRepositoryIndex) : 'add']}
+              selectedKeys={[selectedRepositoryIndex !== undefined ? String(selectedRepositoryIndex) : 'add']}
               style={{ height: '100%' }}
             >
-              <SubMenu key="sub1" icon={<UserOutlined />} title="subnav 1">
-                <Menu.Item key="1">option1</Menu.Item>
-                <Menu.Item key="2">option2</Menu.Item>
-                <Menu.Item key="3">option3</Menu.Item>
-                <Menu.Item key="4">option4</Menu.Item>
-              </SubMenu>
-              <SubMenu key="sub2" icon={<LaptopOutlined />} title="subnav 2">
-                <Menu.Item key="5">option5</Menu.Item>
-                <Menu.Item key="6">option6</Menu.Item>
-                <Menu.Item key="7">option7</Menu.Item>
-                <Menu.Item key="8">option8</Menu.Item>
-              </SubMenu>
-              <SubMenu key="sub3" icon={<NotificationOutlined />} title="subnav 3">
-                <Menu.Item key="9">option9</Menu.Item>
-                <Menu.Item key="10">option10</Menu.Item>
-                <Menu.Item key="11">option11</Menu.Item>
-                <Menu.Item key="12">option12</Menu.Item>
-              </SubMenu>
+              {repositoryMenuItems}
+              <Menu.Item key="add" onClick={onRepositorySetup}>+ Add new repository</Menu.Item>
             </Menu>
           </Sider>
           <Content style={{ padding: '0 24px', minHeight: 280 }}>
-            <PullRequestTable loading={loading} pullRequests={pullRequests || []} />
+            {selectedRepositoryIndex === undefined
+              ? <RepositorySetupForm availableIntegrations={integrations} onSave={onRepositorySave} />
+              : (
+                <>
+                  <div>
+                    <Button onClick={refresh} disabled={loading}>Refresh</Button>
+                  </div>
+                  <PullRequestTable loading={loading} pullRequests={repositories[selectedRepositoryIndex].data || []} />
+                </>
+              )
+            }
           </Content>
         </Layout>
       </Content>
-      <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
     </Layout>
   );
 }
