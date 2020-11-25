@@ -8,7 +8,7 @@ const GITLAB_TOKEN_RETRIEVE_ROUTE_PATH = '/gitlab/token'
 
 export type GitLabSource = {
   repositoryPath: string;
-  filterLabels: string[];
+  filterLabels?: string[];
 }
 
 export class GitLabIntegration implements Integration<GitLabSource> {
@@ -58,11 +58,11 @@ export class GitLabIntegration implements Integration<GitLabSource> {
     if (gitlabMRDataQueryResponse.data) {
       const mergeRequests = gitlabMRDataQueryResponse.data.project.mergeRequests.nodes;
       const myUserId = gitlabMRDataQueryResponse.data.currentUser.id;
-      const filterLabelsLowerCase = filterLabels.map(label => label.toLowerCase());
+      const filterLabelsLowerCase = filterLabels?.map(label => label.toLowerCase()) || [];
 
       return mergeRequests
         .filter(mr =>
-          filterLabels.length === 0 ||
+          !filterLabels || filterLabels.length === 0 ||
           mr.labels.nodes.some(
             ({ title }) => filterLabelsLowerCase.includes(title.toLowerCase())
           )
