@@ -33,3 +33,10 @@ npm start
 * Possibility to mark PR as "reviewed" manually (local state)
     * New status needed for that
     * It should be able to go to "👀" state if PR changed after last manual review click
+* Edit repositories
+* Delete repositories
+* GitLab integration improvements
+    * Setup
+        * Auto-suggest filter labels
+        * Auto-suggest repository paths by quering for private ones
+        * If user pastes repository URL, extract the repository path automatically
