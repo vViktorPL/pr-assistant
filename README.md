@@ -10,6 +10,10 @@ lists pull requests that require your attention by tagging them with some pseudo
 * 🆕 - This PR has been created less than 10 minutes ago.
 * 😜 - This is your own PR (no CR needed from your side).
 
+## Supported platforms
+
+Currently this tool supports only repositories that are hosted on gitlab.com (no self hosting support).
+
 ## Setup
 
 ```bash
