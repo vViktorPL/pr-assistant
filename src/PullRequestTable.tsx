@@ -38,7 +38,7 @@ const columns = [
       <>
         <a href={record.url} target="_blank" rel="noreferrer">{text}</a>
         {" "}
-        {record.labels.map(({ title, color }) => <Tag color={color}>{title}</Tag>)}
+        {record.labels.map(({ title, color }, index) => <Tag color={color} key={index}>{title}</Tag>)}
       </>
     ),
   },
@@ -66,6 +66,6 @@ const rowClassName = ({ status }: PullRequest) => {
 
 export const PullRequestTable = ({loading, pullRequests}: PullRequestTableProps) => {
   return (
-    <Table loading={loading} columns={columns} dataSource={pullRequests} rowClassName={rowClassName} />
+    <Table loading={loading} columns={columns} dataSource={pullRequests} rowClassName={rowClassName} rowKey="url" />
   );
 }
