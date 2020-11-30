@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Layout, Menu, Button } from 'antd';
 import { GitLabIntegration } from './Integration/GitLab/GitLabIntegration'
 import { Integration, Repository } from './Integration/Integration'
-import { PullRequestTable } from './PullRequestTable'
+import { PullRequestTable } from './PullRequestTable/PullRequestTable'
 import {
   RepositorySetupForm,
   RepositorySetupFormProps

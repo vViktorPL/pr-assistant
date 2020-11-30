@@ -29,7 +29,6 @@ npm start
 
 ## Roadmap
 
-* Stopwatch feature 
 * Possibility to mark PR as "reviewed" manually (local state)
     * New status needed for that
     * It should be able to go to "👀" state if PR changed after last manual review click
