@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Layout, Menu, Button } from 'antd';
-import { UserOutlined, LaptopOutlined, NotificationOutlined } from '@ant-design/icons';
 import { GitLabIntegration } from './Integration/GitLab/GitLabIntegration'
 import { Integration, Repository } from './Integration/Integration'
 import { PullRequestTable } from './PullRequestTable'
@@ -38,6 +37,8 @@ function App() {
           return true;
         }
       }
+
+      return false;
     }
   );
 
@@ -81,7 +82,7 @@ function App() {
         refresh();
       }
     },
-    [routeCatched, selectedRepositoryIndex, repositories, loading]
+    [routeCatched, selectedRepositoryIndex, repositories, loading, refresh]
   );
 
   const repositoryMenuItems = useMemo(

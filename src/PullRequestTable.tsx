@@ -36,7 +36,7 @@ const columns = [
     key: 'name',
     render: (text: string, record: PullRequest) => (
       <>
-        <a href={record.url} target="_blank">{text}</a>
+        <a href={record.url} target="_blank" rel="noreferrer">{text}</a>
         {" "}
         {record.labels.map(({ title, color }) => <Tag color={color}>{title}</Tag>)}
       </>

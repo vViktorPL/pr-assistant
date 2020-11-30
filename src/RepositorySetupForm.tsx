@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Form, Input, Button, Checkbox, Select } from 'antd';
+import { Form, Input, Button, Select } from 'antd';
 import { Integration, Repository } from './Integration/Integration'
 import { useCallback, useState } from 'react'
 
@@ -72,7 +72,7 @@ export const RepositorySetupForm = ({ availableIntegrations, onSave }: Repositor
       </Form.Item>
 
       {selectedIntegrationId !== undefined && (
-        React.createElement(availableIntegrations.find(({ id }) => selectedIntegrationId)!.sourceSetupComponent)
+        React.createElement(availableIntegrations.find(({ id }) => id === selectedIntegrationId)!.sourceSetupComponent)
       )}
 
       <Form.Item {...tailLayout}>
