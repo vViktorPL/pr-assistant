@@ -39,4 +39,3 @@ npm start
     * Setup
         * Auto-suggest filter labels
         * Auto-suggest repository paths by quering for private ones
-        * If user pastes repository URL, extract the repository path automatically
