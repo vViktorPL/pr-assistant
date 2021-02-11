@@ -73,20 +73,25 @@ export class GitLabIntegration implements Integration<GitLabSource> {
             ({id}) => id === myUserId
           );
 
+          const discussionsIAmInvolvedIn = mergeRequest.discussions.nodes.filter(
+            discussion => discussion.notes.nodes.some(note => note.author.id === myUserId)
+          );
+          const discussionsIAmInvolvedInLastUpdateTimestamp = Math.max(0, ...discussionsIAmInvolvedIn.map(
+            discussion => {
+              const updatedAt = discussion.notes.nodes.slice().pop()?.updatedAt;
+
+              return updatedAt ? +new Date(updatedAt) : 0;
+            }
+          ));
+          const unresoledDiscussionsIAmInvolvedInCount = discussionsIAmInvolvedIn.filter(
+            discussion => discussion.resolvable && !discussion.resolved
+          ).length;
 
           const myNotes = mergeRequest.discussions.nodes.flatMap(
             discussion =>
               discussion.notes.nodes.filter(
                 note => note.author.id === myUserId
               )
-          );
-          const myResolvableNotes = myNotes.filter(
-            note => note.resolvable && note.author.id === myUserId
-          );
-          const myThreadsCount = myResolvableNotes.length;
-          const myResolvedThreadsCount = myResolvableNotes.reduce(
-            (count, {resolved}) => count + +resolved,
-            0
           );
           const myLastAction = myNotes.reduce(
             (latestUpdatedAt, {updatedAt}) => {
@@ -95,18 +100,23 @@ export class GitLabIntegration implements Integration<GitLabSource> {
             },
             0
           );
-          const mergeRequestUpdatedAtTimestamp = +new Date(mergeRequest.updatedAt);
           const mergeRequestCreatedAtTimestamp = +new Date(mergeRequest.createdAt);
+          const mrChangesSystemNotes = mergeRequest.discussions.nodes.flatMap(
+            discussion => discussion.notes.nodes.filter(note => note.system && note.systemNoteIconName !== "approval")
+          );
+          const lastMRChangeSystemNoteTimestamp = Math.max(0, ...mrChangesSystemNotes.map(note => + new Date(note.updatedAt)));
+
+          const relevantUpdatesSinceMyLastAction = unresoledDiscussionsIAmInvolvedInCount > 0 && (discussionsIAmInvolvedInLastUpdateTimestamp > myLastAction || lastMRChangeSystemNoteTimestamp > myLastAction);
 
           if (mergeRequest.author.id === myUserId) {
             status = PullRequestStatus.Mine;
-          } else if (myLastAction > 0 && myLastAction < mergeRequestUpdatedAtTimestamp && myResolvedThreadsCount < myThreadsCount) {
+          } else if (relevantUpdatesSinceMyLastAction) {
             status = PullRequestStatus.ReReviewNeeded;
-          } else if (approvedByMe && myResolvedThreadsCount === myThreadsCount) {
+          } else if (approvedByMe && unresoledDiscussionsIAmInvolvedInCount === 0) {
             status = PullRequestStatus.Approved;
-          } else if (myThreadsCount > 0 && myResolvedThreadsCount < myThreadsCount && !approvedByMe) {
+          } else if (unresoledDiscussionsIAmInvolvedInCount > 0) {
             status = PullRequestStatus.WaitingForResponse;
-          } else if (approvedByMe && myThreadsCount > myResolvedThreadsCount) {
+          } else if (approvedByMe && unresoledDiscussionsIAmInvolvedInCount > 0) {
             status = PullRequestStatus.Checked;
           } else if (Date.now() - mergeRequestCreatedAtTimestamp  < 10 * 60 * 1000) {
             status = PullRequestStatus.New;
