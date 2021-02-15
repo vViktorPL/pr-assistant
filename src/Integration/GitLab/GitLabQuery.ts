@@ -15,10 +15,12 @@ export const GITLAB_MR_DATA_QUERY = gql`
           updatedAt
           labels { nodes { title, color } }
           discussions { nodes {
+            resolved
+            resolvable
             notes { nodes {
+              system
+              systemNoteIconName
               updatedAt
-              resolved
-              resolvable
               author { id }
             }}
           }}
@@ -50,11 +52,13 @@ export type GitLabQueryResponseData = {
         },
         discussions: {
           nodes: {
+            resolvable: boolean;
+            resolved: boolean;
             notes: {
               nodes: {
+                system: boolean;
+                systemNoteIconName: string;
                 updatedAt: string;
-                resolved: boolean;
-                resolvable: boolean;
                 author: { id: string };
               }[]
             },
